@@ -1,0 +1,399 @@
+{
+  "name": Username_PassedProfanityCheck,
+  "nXXX": Username_RequiresProfanityCheck,
+  "prvr": ProductVersionLastSaved,
+  "boqt": BestOverallQuarterMileTime,
+  "boht": BestOverallHalfMileTime,
+  "tdtr": TotalDistanceTravelled,
+  "tplt": TotalPlayTime,
+  "tgrt": TotalGarageTime,
+  "tosm": TopOverallSpeedMPH,
+  "ml00": Milestone_Crew_Level,
+  "ml01": Milestone_Crew_CE,
+  "ml02": Milestone_Races,
+  "mp00": Milestone_Crew_Level_Progress,
+  "mp01": Milestone_Crew_CE_Progress,
+  "mp02": Milestone_Races_Progress,
+  "caea": CashEarned,
+  "casp": CashSpent,
+  "iacs": IAPCashSpent,
+  "pcbp": CashBonusPercent,
+  "goea": GoldEarned,
+  "gosp": GoldSpent,
+  "iags": IAPGoldSpent,
+  "gtea": GachaTokensEarned,
+  "gtsp": GachaTokensSpent,
+  "gbke": GachaBronzeKeysEarned,
+  "gbks": GachaBronzeKeysSpent,
+  "igbk": IAPGachaBronzeKeysSpent,
+  "gske": GachaSilverKeysEarned,
+  "gsks": GachaSilverKeysSpent,
+  "igsk": IAPGachaSilverKeysSpent,
+  "ggke": GachaGoldKeysEarned,
+  "ggks": GachaGoldKeysSpent,
+  "iggk": IAPGachaGoldKeysSpent,
+  "dbdt": DailyBattlesDoneToday,
+  "dbla": DailyBattleLastEventDayOfYear,
+  "dbir": DailyBattlesInARow,
+  "dblt": DailyBattleLastRaceTime,
+  "lblt": LeaderboardLastSeasonEndTime,
+  "dbac": LoanBattleAICar,
+  (optional)"dbrl": DailyBattleRewardList
+  [
+    {
+      "drss": RewardStepString,
+      "dbrt": RewardType,
+      "dram": Amount
+    }
+  ],
+  "dbrm": DailyBattleRewardsMapCache,
+  "bnou": BoostNitrousUsed,
+  "nful": FreeUpgradesLeft,
+  "nffl": FreeFuseLeft,
+  "nftr": FreeTestRunLeft,
+  "nfdl": FreeDynoLeft,
+  "lgat": LastFreeGachaSpinAwardTime,
+  "tgpc": TotalGachaPulls,
+  (optional)"glrp": GachaLoyaltyRewardPending,
+  "hsfg": HasSpinnedFTUEGacha,
+  "ncui": NextCarUID,
+  "cscu": CurrentlySelectedCarUID,
+  "bcs1": BossChallengeStateT1,
+  "bcs2": BossChallengeStateT2,
+  "bcs3": BossChallengeStateT3,
+  "bcs4": BossChallengeStateT4,
+  "bcs5": BossChallengeStateT5,
+  "mumu": OptionMusicMute,
+  "somu": OptionSoundMute,
+  "onot": OptionNotifications,
+  "nint": NextInactivityNotificationTime,
+  "ian5": InformedAboutNitrous5,
+  "raen": RacesEntered,
+  "tutr": TutorialRacesAttempted,
+  "mfer": MechanicFettledRaces,
+  "rawo": RacesWon,
+  "mira": MileStoneRace,
+  "nsms": NumSMS,
+  "nema": NumEmails,
+  "ntwe": NumTweets,
+  "nfbp": NumFBPosts,
+  "ect1": EventsCompletedTier1,
+  "ect2": EventsCompletedTier2,
+  "ect3": EventsCompletedTier3,
+  "ect4": EventsCompletedTier4,
+  "ect5": EventsCompletedTier5,
+  "wanu": HaveWarnedAboutNitrousUpgrade,
+  "wafd": HaveWarnedAboutFinalDriveRatio,
+  "hsif": HasSignedIntoFacebookBefore,
+  "hsig": HasSignedIntoGameCentreBefore,
+  "mtrr": MechanicTuningRacesRemaining,
+  "sfmp": HaveShownFirstMechanicPopUp,
+  "wlar": WinsAtLastAgentResult,
+  "colo": ContiguousLosses,
+  "cplo": ContiguousProgressionLosses,
+  "cplt": ContiguousProgressionLossesTriggered,
+  "hbfc": HasBoughtFirstCar,
+  "fcpi": FirstCarPurchaseIndex,
+  "qfsf": QualifiedForShortFTUE,
+  "hbfu": HasBoughtFirstUpgrade,
+  "glrw": GotLoyaltyReward,
+  "lang": LastAgentNag,
+  "uspl": UserStartedPlaying,
+  "pllv": PlayerLevel,
+  "plrp": RP,
+  "prpb": RPBonusPercent,
+  "lbrp": LeaderboardRP,
+  "elor": EloRating,
+  "ltin": LastTicketIncrement,
+  "rsli": RacesSinceLastInactivityReward,
+  "nirg": NumberInactivityRewardsGiven,
+  "ct2f": CanTrySecondFacebookNag,
+  "relf": RacesEnteredAtLastFacebookNag,
+  "scnt": SessionsCounter,
+  "hlof": HasLikedOnFacebook,
+  "hfot": HasFollowedUsOnTwitter,
+  "lllm": LastLoggedLanguageMetric,
+  "lula": LastUsedLanguage,
+  "afnp": HaveAskedForSystemNotificationPermission,
+  "tmra": TimeOfMostRecentActivity,
+  "hsfp": HasSentFirstPush,
+  "lfbn": TimeOfLastFacebookPushNotification,
+  "pavt": PreferredAvatarType,
+  "pcap": PreferredCsrAvatarPic,
+  "puna": PreferredUserName,
+  "caow": CarsOwned
+  [
+    {
+      "unid": UniqueID,
+      "crdb": CarDBKey,
+      "awar": AwaitingArrival,
+      "grsp": TunedGearRatioSetup
+      "fidr": TunedFinalDriveRatio,
+      "nlpr": TunedNitrousLengthPowerRatio,
+      "tafr": TunedAirFuelRatioPercent,
+      "titp": TunedIgnitionTimingPercent,
+      "trld": TunedRevLimiterRPMDelta,
+      "tssp": TunedSuspensionStiffnessPercent,
+      "tssr": TunedSuspensionStiffnessPercentRear,
+      "ttup": TunedTurboPressurePercent,
+      "ttpp": TunedTyrePressurePercent,
+      "appi": AppliedPaintIndex,
+      "orpi": OriginalPaintIndex,
+      "apii": AppliedInteriorIndex,
+      "apci": AppliedCalliperIndex,
+      "apln": AppliedLiveryName,
+      "apcn": AppliedCustomisationNames
+      "bqmt": BestQuarterMileTime,
+      "bhmt": BestHalfMileTime,
+      "ditr": DistanceTravelled,
+      "rcat": RacesAttempted,
+      "rwon": RacesWon,
+      "msou": MoneySpentOnUpgrades,
+      "nuub": NumUpgradesBought,
+      "tsat": TopSpeedAttained,
+      "ccna": CustomCarNags,
+      "upst": UpgradeStatus
+	  [
+        {
+          "lvlo": levelOwned,
+          "lvlf": levelFitted,
+          "lvls": levels
+		  [
+            {
+              "ulpf": previouslyFitted,
+              "fsg": fusingSlotGrades
+            }
+          ]
+        }
+      ],
+      "fuud": FusedUpgradeData
+	  [],
+      "owlv": OwnedLiveries
+	  [],
+      "cppi": CurrentPPIndex,
+      "cepi": CurrentEPIndex,
+      "ctie": CarTier,
+      "csrc": CarSource,
+      "nupl": NumberPlate
+	  {
+        "txt": Text,
+        "bgc": BackgroundColor
+        "tc": TextColor
+        "bc": BorderColor
+      },
+      "elit": EliteCar,
+      "spup": SportsUpgrade,
+      "esup": EvoStageUpgrade,
+      "gacp": GachaConfigPending,
+      "paid": PaintID,
+      "wpid": WrapPaintID,
+      "inid": InteriorID,
+      "caid": CalliperID,
+      "whbn": WheelBundleName,
+      "tlad": TightLoopQuarterMileTimeAdjust
+    }
+  ],
+  "cgpi": CarGaragePlacementIndices
+  "mpcp": CarsWonInMultiplayer
+  [],
+  "caup": CarUpgradePartsOwned
+  [],
+  "cues": CarUpgradeEvoStagesOwned
+  [],
+  "uugd": UnseenUpgradeDeliveries,
+  "lsmg": LastSeenMessageID_Global,
+  "lcmc": LastSeenMessageID_Crew,
+  "evcc": EventsCompleted
+  "sesta": SeriesEventStartTimes
+  [],
+  "isea": SeriesEventsAnnounced
+  [],
+  "ucw": UnnotifiedUnlockedCarWraps
+  [],
+  "ncw": NotifiedUnlockedCarWraps
+  [],
+  "iscc": SeriesCompleted
+  [],
+  "inse": IntroducedSmallEvents
+  [],
+  "iase": InteractedSmallEvents
+  [],
+  "obco": TutorialObjectivesCompleted
+  "objc": ObjectivesCompleted
+  "obca": ObjectivesCollected
+  "obja": ActiveObjectives
+  "arqu": ArrivalQueue
+  [],
+  "calo": CarLoans
+  [],
+  "fupi": FuelPips,
+  "abstb": LastAbsoluteTimeBase,
+  "fart": LastFuelAutoReplenishedTime,
+  "lants2": LastAbsoluteNowTimeStamp,
+  "lsnts": LastServerNowTimeStamp,
+  "ladt": LastAdvertDate,
+  "adct": AdCount,
+  "gfrl": GoldFuelRefills,
+  "hcfr": HasClaimedFuelRefuel,
+  "ftug": FuelTankUpgrade,
+  "w2ep1": HasAlreadySeenW2EPrompt1,
+  "w2ep2": HasAlreadySeenW2EPrompt2,
+  "caba": CashBoostAmount,
+  "cabr": CashBoostRestriction,
+  "cbrr": CashBoostRacesRemaining,
+  "cums": CumulativeSessions,
+  "cpip": CrewProgressionIntroductionPlayed,
+  "hafc": HasAttemptedFirstCrew,
+  "lsmd": LastServerMessageDisplayedID,
+  "lsmc": LastServerMessageDisplayedCount,
+  "eifc": EmailInviteFuelRewardsCount,
+  "eift": EmailInviteFuelRewardsTime,
+  "fifc": FacebookInviteFuelRewardsCount,
+  "fift": FacebookInviteFuelReceivedRewardsTime,
+  "fist": FacebookInviteFuelSentTime,
+  "flrc": FacebookLoginRewardCount,
+  "fsra": FacebookSSORewardAllowed,
+  "fbid": FacebookID,
+  "fiui": FacebookInviteFuelSentToUserIds
+  [],
+  "tifc": TwitterInviteFuelRewardsCount,
+  "tift": TwitterInviteFuelRewardsTime,
+  "tcfc": TwitterCashRewardsCount,
+  "tcft": TwitterCashRewardsTime,
+  "ratb": DoneRateAppTriggerBuyCar,
+  "ratc": DoneRateAppTriggerCrewMember,
+  "ludn": LastUpgradeDateTimeNag,
+  "lclt": LastCrewLessonTried,
+  "clng": CrewLessonNagged,
+  "rcbp": RequireConfirmBanPopup,
+  "tcbl": TimeWhenNMGBanLifts,
+  "msmi": HasHadMechanicSlowMotionIntroduction,
+  "hsnt": HasSeenNitrousTutorial,
+  "hslt": HasSeenLaunchTutorial,
+  "btnq": BestTwitterNagTimeQtr,
+  "aupd": AmateurUnlockPopupHasBeenDisplayed,
+  "pupd": ProUnlockPopupHasBeenDisplayed,
+  "sscp": ShouldShowSkipTo2ndCrewMemberPopup,
+  "trhi": TransactionHistory
+  [
+    "CarKey,Cash,Gold"
+  ],
+  "ltgq": LastTierGivenNewTierInactivityReward,
+  "rclq": RacesCompletedAtLastNewTierInactivityReset,
+  "nqrg": NumberNewTierInactivityRewardsGiven,
+  "nqnt": NextNewTierInactivityNotificationTime,
+  "lttu": LastTierToHaveBeenUnlocked,
+  "cumt": CurrentMapTier,
+  "sIAPbn": ShowIAPBadgeNotification,
+  "lbcr": LastBoughtCarRacesEntered,
+  "duwt": DoneUpgradeWarningOnNewTier,
+  "wmid": WelcomeMessageId,
+  "pcid": PlaceholderCrewID,
+  "cbcc": CrewBattleCurrentCrew,
+  "cbcm": CrewBattleCurrentMember,
+  "cbto": CrewBattleTextOrder
+  "cbtl": CrewBattleCurrentTextLine,
+  "cbli": CrewBattleLastIntroductionPlayed,
+  "acmk": ActiveCrewMembershipKnown,
+  "acid": ActiveCrewUID,
+  "acli": ActiveCrewLeaderUID,
+  "acpr": ActiveCrewPlayerRole,
+  "acpl": ActiveCrewLevel,
+  "aclp": ActiveCrewLevelProgress,
+  "acrp": ActiveCrewRP,
+  "fcrw": FirstCrewUID,
+  "chen": CrewHangoutEnabled,
+  "nnjc": NeedsNotificationForJoiningNewCrew,
+  "nnri": NeedsNotificationForPlayerRoleIncrease,
+  "nnkc": NeedsNotificationForBeingKickedFromThisCrewName,
+  "vifc": ViewedInvitesFromOtherCrews,
+  "vrtj": ViewedRequestsToJoinPlayersCrew,
+  "ncbp": NumberOfCrewBenefitPopupViewings,
+  "clen": CrewLogEnabled,
+  "cht5": CrewHangoutLoadTier5Cars,
+  "chs7": CrewHangoutShow7CarsInsteadOf5,
+  "ctbm": CreationTimeOfLastDetectedBlockedMessagePostedByThisUser,
+  "cbpt": CrewBattleProgressionTier,
+  "cbpm": CrewBattleProgressionMember,
+  "dunm": DebugUseNewMap,
+  "wfgc": WatchForGasDailyCount,
+  "wfgt": WatchForGasLastRewardedTime,
+  "ppct": PlayerProfileCreatedTime,
+  "adlt": AdvertLastShownTime,
+  "adsp": AdvertsShownIn24HrPeriod,
+  "ssle": SelectedSkillLevelPerEvent
+  {},
+  "cact": ConfiguratorAdvertRotationCarTime,
+  "caci": ConfiguratorAdvertRotationCarIndices
+  "racv": RateTheAppCompletedVersion,
+  "rasc": RateTheAppSkipCount,
+  "rarc": RateTheAppRaceCount,
+  "rawc": RateTheAppRaceWonCount,
+  "pupr": PurchasedProducts
+  [],
+  "tnci": TuningNaggerCarUniqueId,
+  "tnur": TuningNaggerUpgradeRaceCount,
+  "tnuf": TuningNaggerUpgradeFittedCount,
+  "tnvm": TuningNaggerCheckupPopUpViewedMessageVariations
+  [],
+  "ngrs": Naggers
+  {
+    "1": {
+      "ncnt": 0,
+      "rcnt": 5
+    },
+    "4": {
+      "ncnt": 0,
+      "rcnt": 0
+    },
+    "6": {
+      "ncnt": 0,
+      "rcnt": 0
+    },
+    "7": {
+      "ncnt": 0,
+      "rcnt": 0
+    },
+    "8": {
+      "cnct": {},
+      "crct": {}
+    },
+    "9": {
+      "ncnt": 0,
+      "vwtm": "01/01/0001 00:00:00"
+    },
+    "10": {
+      "cnct": {
+        "7": 1
+      },
+      "crct": {
+        "7": 5
+      }
+    },
+    "11": {
+      "cnct": {
+        "7": 1
+      },
+      "crct": {
+        "7": 4
+      }
+    },
+    "12": {
+      "cnct": {},
+      "crct": {}
+    },
+    "14": {
+      "cnct": {
+        "7": 1
+      },
+      "crct": {
+        "7": 3
+      }
+    }
+  },
+  "lbty": LeaderboardType,
+  "demo": IsInDemoMode,
+  "hsdm": HasSetupDemoMode,
+  "mgis": MigrationInfoSet
+  (optional)"mgdt": MigrationData
+}

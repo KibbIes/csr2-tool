@@ -1,0 +1,82 @@
+[
+  {
+    "name": "CSR2FileTool.exe",
+    "path": "CSR2FileTool.exe",
+    "sha": "00f672ab88f2a730f12c23f3a6ea09946f27622d",
+    "size": 8225904,
+    "url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/CSR2FileTool.exe?ref=main",
+    "html_url": "https://github.com/devpotatoes/CSR2FileTool/blob/main/CSR2FileTool.exe",
+    "git_url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/00f672ab88f2a730f12c23f3a6ea09946f27622d",
+    "download_url": "https://raw.githubusercontent.com/devpotatoes/CSR2FileTool/main/CSR2FileTool.exe",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/CSR2FileTool.exe?ref=main",
+      "git": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/00f672ab88f2a730f12c23f3a6ea09946f27622d",
+      "html": "https://github.com/devpotatoes/CSR2FileTool/blob/main/CSR2FileTool.exe"
+    }
+  },
+  {
+    "name": "CSR2FileTool.py",
+    "path": "CSR2FileTool.py",
+    "sha": "2ec8dc65387cd1f9d3d5e42ddcfbc35dfbf009f6",
+    "size": 5949,
+    "url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/CSR2FileTool.py?ref=main",
+    "html_url": "https://github.com/devpotatoes/CSR2FileTool/blob/main/CSR2FileTool.py",
+    "git_url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/2ec8dc65387cd1f9d3d5e42ddcfbc35dfbf009f6",
+    "download_url": "https://raw.githubusercontent.com/devpotatoes/CSR2FileTool/main/CSR2FileTool.py",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/CSR2FileTool.py?ref=main",
+      "git": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/2ec8dc65387cd1f9d3d5e42ddcfbc35dfbf009f6",
+      "html": "https://github.com/devpotatoes/CSR2FileTool/blob/main/CSR2FileTool.py"
+    }
+  },
+  {
+    "name": "LICENSE",
+    "path": "LICENSE",
+    "sha": "871ce8e638ad6d763308e44411d2c4a2e658cf55",
+    "size": 35821,
+    "url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/LICENSE?ref=main",
+    "html_url": "https://github.com/devpotatoes/CSR2FileTool/blob/main/LICENSE",
+    "git_url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/871ce8e638ad6d763308e44411d2c4a2e658cf55",
+    "download_url": "https://raw.githubusercontent.com/devpotatoes/CSR2FileTool/main/LICENSE",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/LICENSE?ref=main",
+      "git": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/871ce8e638ad6d763308e44411d2c4a2e658cf55",
+      "html": "https://github.com/devpotatoes/CSR2FileTool/blob/main/LICENSE"
+    }
+  },
+  {
+    "name": "README.md",
+    "path": "README.md",
+    "sha": "c2fa6afdb05af8678ff40adfa4548b49accf7b28",
+    "size": 3003,
+    "url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/README.md?ref=main",
+    "html_url": "https://github.com/devpotatoes/CSR2FileTool/blob/main/README.md",
+    "git_url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/c2fa6afdb05af8678ff40adfa4548b49accf7b28",
+    "download_url": "https://raw.githubusercontent.com/devpotatoes/CSR2FileTool/main/README.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/README.md?ref=main",
+      "git": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/blobs/c2fa6afdb05af8678ff40adfa4548b49accf7b28",
+      "html": "https://github.com/devpotatoes/CSR2FileTool/blob/main/README.md"
+    }
+  },
+  {
+    "name": "assets",
+    "path": "assets",
+    "sha": "0ea3e8148e967e59382109ee346e485364ebef78",
+    "size": 0,
+    "url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/assets?ref=main",
+    "html_url": "https://github.com/devpotatoes/CSR2FileTool/tree/main/assets",
+    "git_url": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/trees/0ea3e8148e967e59382109ee346e485364ebef78",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/devpotatoes/CSR2FileTool/contents/assets?ref=main",
+      "git": "https://api.github.com/repos/devpotatoes/CSR2FileTool/git/trees/0ea3e8148e967e59382109ee346e485364ebef78",
+      "html": "https://github.com/devpotatoes/CSR2FileTool/tree/main/assets"
+    }
+  }
+]
