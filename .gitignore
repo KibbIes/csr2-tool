@@ -1,5 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Node/React
 node_modules/
 dist/
+build/
 .vite/
-*.nsb
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local configuration & large files (if any)
 *.log
+.env
+# Large binary game files
+*.so
