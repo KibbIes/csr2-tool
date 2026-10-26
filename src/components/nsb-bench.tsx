@@ -1,6 +1,86 @@
 import { useState } from "react";
+import * as pako from "pako";
 
-const BACKEND = "http://127.0.0.1:8000";
+// ==========================================
+// BROWSER-SIDE CORE LOGIC (Replaces Python)
+// ==========================================
+function extractJsonObject(text: string) {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) return text.substring(start, end + 1);
+  return text;
+}
+
+function unpackNsb(arrayBuffer: ArrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) {
+    const text = new TextDecoder().decode(bytes);
+    return { jsonText: extractJsonObject(text), version: 0, trailing: new Uint8Array(0) };
+  }
+  const inflator = new pako.Inflate();
+  inflator.push(bytes);
+  if (inflator.err) throw new Error("GZIP Error: " + inflator.msg);
+  
+  const text = new TextDecoder().decode(inflator.result);
+  const trailingStart = bytes.length - inflator.strm.avail_in;
+  const trailing = bytes.slice(trailingStart);
+  
+  let version = 1;
+  let jsonText = text;
+  const lines = text.split('\n');
+  if (lines.length >= 2 && lines[0].includes('-ver-')) {
+    const parts = lines[0].split('-ver-');
+    if (parts.length > 1) {
+      const v = parseInt(parts[0]);
+      if (!isNaN(v)) version = v;
+    }
+    jsonText = text.substring(lines[0].length + 1);
+  }
+  return { jsonText: extractJsonObject(jsonText), version, trailing };
+}
+
+async function generateCurrentKey(playerId: string, version: number) {
+  const reversedId = playerId.split('').reverse().join('');
+  const idx = version % reversedId.length;
+  const rotated = reversedId.slice(idx) + reversedId.slice(0, idx);
+  return new TextEncoder().encode(rotated);
+}
+
+async function packNsb(jsonText: string, playerId: string, version: number, trailing: Uint8Array) {
+  const encoder = new TextEncoder();
+  const jsonBytes = encoder.encode(jsonText);
+  const key = await generateCurrentKey(playerId, version);
+  
+  const cryptoKey = await window.crypto.subtle.importKey(
+      "raw", key, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]
+  );
+  const signatureBuffer = await window.crypto.subtle.sign("HMAC", cryptoKey, jsonBytes);
+  const signatureHex = Array.from(new Uint8Array(signatureBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  const fullText = `${version}-ver-${signatureHex}\n${jsonText}`;
+  const fullBytes = encoder.encode(fullText);
+  const gzipped = pako.gzip(fullBytes);
+  
+  const result = new Uint8Array(gzipped.length + trailing.length);
+  result.set(gzipped, 0);
+  result.set(trailing, gzipped.length);
+  return result;
+}
+
+function patchSoBuffer(arrayBuffer: ArrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const offset = 0x378E0D8;
+  const patch = [0x00, 0x00, 0x80, 0x52, 0xC0, 0x03, 0x5F, 0xD6];
+  if (bytes.length > offset + 8) {
+    for (let i = 0; i < 8; i++) bytes[offset + i] = patch[i];
+  } else {
+    throw new Error("File too small for offset 0x378E0D8");
+  }
+  return bytes;
+}
+// ==========================================
 
 export function NsbBench() {
   const [nsbFile, setNsbFile] = useState<File | null>(null);
@@ -17,13 +97,6 @@ export function NsbBench() {
   const [isLoading, setIsLoading] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
-  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve((reader.result as string).split(',')[1]);
-    reader.onerror = reject;
-  });
-
   const handleGenerate = async () => {
     if (!playerId.trim()) return setError("Enter Player ID");
     if (!nsbFile || !scbFile) return setError("Upload NSB and SCB");
@@ -33,28 +106,78 @@ export function NsbBench() {
     setIsLoading(true);
 
     try {
-      setStatus("Unpacking & Modding Files...");
-      const nsb_b64 = await readFileAsBase64(nsbFile);
-      const scb_b64 = await readFileAsBase64(scbFile);
+            setStatus("Loading Car Database...");
+      const carsRes = await fetch('/all_cars.txt');
+      if (!carsRes.ok) throw new Error("Failed to load all_cars.txt from /public folder.");
+      const carsText = await carsRes.text();
+      // Extract the array using brackets instead of curly braces
+      const start = carsText.indexOf('[');
+      const end = carsText.lastIndexOf(']');
+      const cars = JSON.parse(carsText.substring(start, end + 1));
 
-      const modRes = await fetch(`${BACKEND}/auto_mod`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player_id: playerId.trim(), nsb_b64, scb_b64, inject_cars: injectCars, add_money: addMoney })
-      });
+            setStatus("Unpacking & Modding NSB...");
+      const nsbBuffer = await nsbFile.arrayBuffer();
+      const { jsonText: nsbJsonStr, version: nsbVer, trailing: nsbTrail } = unpackNsb(nsbBuffer);
+      const nsb = JSON.parse(nsbJsonStr);
+      
+      // --- SURGICAL WIPE ---
+      // Removes the cgpi array entirely, regardless of its contents.
+      // This forces the game to rebuild the garage slots from scratch on boot.
+      // Does NOT touch caow, plrp, or any other save data.
+      delete nsb.cgpi;
+      // --------------------
 
-      if (!modRes.ok) {
-        const text = await modRes.text();
-        let errMsg = text;
-        try { errMsg = JSON.parse(text).error; } catch(e) {}
-        throw new Error(errMsg || `Server error: ${modRes.status}`);
+      setStatus("Unpacking & Modding SCB...");
+      const scbBuffer = await scbFile.arrayBuffer();
+      const { jsonText: scbJsonStr, version: scbVer } = unpackNsb(scbBuffer);
+      const scb = JSON.parse(scbJsonStr);
+
+      // --- APPLY MODIFICATIONS ---
+      if (injectCars && cars) {
+        nsb.caow = cars;
+        const crds = cars.map((c: any) => c.crdb);
+        const brands = Array.from(new Set(crds.map((c: string) => `id_${c.split('_')[0].toLowerCase()}`))).sort();
+        if (!scb.JokerPartsData) scb.JokerPartsData = {};
+        const jp = scb.JokerPartsData;
+        jp.JokerCarUpgradeStagesEarned = {};
+        jp.JokerCarUpgradeStagesSpent = {};
+        crds.forEach((c: string) => { jp.JokerCarUpgradeStagesEarned[c] = 10000; jp.JokerCarUpgradeStagesSpent[c] = 0; });
+        jp.JokerFusionPartsEarned = {};
+        jp.JokerFusionPartsSpent = {};
+        brands.forEach((b: string) => { jp.JokerFusionPartsEarned[b] = 10000; jp.JokerFusionPartsSpent[b] = 0; });
+        jp.JokerIconRestorationPartsEarned = 10000;
+        jp.JokerIconRestorationPartsSpent = 0;
       }
 
-      const modData = await modRes.json();
-      if (!modData.success) throw new Error(modData.error);
+      if (addMoney) {
+        nsb.caea = 999999999; nsb.casp = 0;
+        nsb.goea = 999999; nsb.gosp = 0;
+        nsb.gbke = 10000; nsb.gbks = 0;
+        nsb.gske = 10000; nsb.gsks = 0;
+        nsb.ggke = 10000; nsb.ggks = 0;
+        nsb.afme = {Green: 10000, Blue: 10000, Red: 10000, Yellow: 10000};
+        nsb.afms = {Green: 0, Blue: 0, Red: 0, Yellow: 0};
+        if (!nsb.cpd) nsb.cpd = {};
+        nsb.cpd.CollectionPoints = 50000;
+        // DO NOT TOUCH plrp, splr, agprlv, elt, eltc, hmpd
 
-      const nsbBlob = new Blob([Uint8Array.from(atob(modData.nsb_b64), c => c.charCodeAt(0))], { type: "application/octet-stream" });
-      const scbBlob = new Blob([Uint8Array.from(atob(modData.scb_b64), c => c.charCodeAt(0))], { type: "application/octet-stream" });
+        scb.CashEarned = nsb.caea; scb.CashSpent = nsb.casp;
+        scb.GoldEarned = nsb.goea; scb.GoldSpent = nsb.gosp;
+        scb.GachaBronzeKeysEarned = nsb.gbke; scb.GachaBronzeKeysSpent = nsb.gbks;
+        scb.GachaSilverKeysEarned = nsb.gske; scb.GachaSilverKeysSpent = nsb.gsks;
+        scb.GachaGoldKeysEarned = nsb.ggke; scb.GachaGoldKeysSpent = nsb.ggks;
+        scb.AMPartGreenEarned = nsb.afme.Green; scb.AMPartGreenSpent = nsb.afms.Green;
+        scb.AMPartBlueEarned = nsb.afme.Blue; scb.AMPartBlueSpent = nsb.afms.Blue;
+        scb.AMPartRedEarned = nsb.afme.Red; scb.AMPartRedSpent = nsb.afms.Red;
+        scb.AMPartYellowEarned = nsb.afme.Yellow; scb.AMPartYellowSpent = nsb.afms.Yellow;
+      }
+
+      setStatus("Packing Files...");
+      const newNsbBytes = await packNsb(JSON.stringify(nsb), playerId.trim(), nsbVer, nsbTrail);
+      const newScbBytes = await packNsb(JSON.stringify(scb), playerId.trim(), scbVer, new Uint8Array(0));
+
+      const nsbBlob = new Blob([newNsbBytes], { type: "application/octet-stream" });
+      const scbBlob = new Blob([newScbBytes], { type: "application/octet-stream" });
 
       const a1 = document.createElement("a");
       a1.href = URL.createObjectURL(nsbBlob);
@@ -69,24 +192,10 @@ export function NsbBench() {
       }, 500);
 
       if (patchSo && soFile) {
-        setStatus("Patching libil2cpp.so...");
-        const soRes = await fetch(`${BACKEND}/patch_so`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/octet-stream",
-            "X-Offset": "0x378E0D8"
-          },
-          body: soFile
-        });
-
-        if (!soRes.ok) {
-          const text = await soRes.text();
-          let errMsg = text;
-          try { errMsg = JSON.parse(text).error; } catch(e) {}
-          throw new Error(errMsg || `Failed to patch .so: ${soRes.status}`);
-        }
-
-        const soBlob = await soRes.blob();
+        setStatus("Patching libil2cpp.so (This may take a moment)...");
+        const soBuffer = await soFile.arrayBuffer();
+        const patchedSo = patchSoBuffer(soBuffer);
+        const soBlob = new Blob([patchedSo], { type: "application/octet-stream" });
         setTimeout(() => {
           const a3 = document.createElement("a");
           a3.href = URL.createObjectURL(soBlob);
@@ -95,16 +204,12 @@ export function NsbBench() {
         }, 1000);
       }
 
-      setStatus("All files generated successfully! Check your Downloads folder.");
+      setStatus("All files generated successfully!");
     } catch (err: any) {
       setError(err.message || String(err));
       setStatus("");
     }
     setIsLoading(false);
-  };
-
-  const downloadPythonScript = () => {
-    window.location.href = `${BACKEND}/download_standalone`;
   };
 
   const downloadInstructions = () => {
@@ -136,7 +241,6 @@ $obbDest = "/data/media/0/Android/obb/com.naturalmotion.customstreetracer2"
 & $adb shell "su -c 'mkdir -p $obbDest'"
 & $adb shell "su -c 'mkdir -p /sdcard/temp_obb'"
 
-# Push with the EXACT filenames the game expects
 & $adb push "C:\\Path\\To\\main.6805204.com.naturalmotion.customstreetracer2.obb" /sdcard/temp_obb/main.6805204.com.naturalmotion.customstreetracer2.obb
 & $adb push "C:\\Path\\To\\patch.6805204.com.naturalmotion.customstreetracer2.obb" /sdcard/temp_obb/patch.6805204.com.naturalmotion.customstreetracer2.obb
 
@@ -158,7 +262,7 @@ Play until you reach the fully interactive garage, then force close the game.
 
 & $adb shell "am force-stop com.naturalmotion.customstreetracer2"
 $pkg = "/data/media/0/Android/data/com.naturalmotion.customstreetracer2/files"
-& $adb shell "su -c 'ls $pkg/pp/'" # Note the 11-digit folder name (your ID)
+& $adb shell "su -c 'ls $pkg/pp/'" 
 $id = "<YOUR_ID_FROM_ABOVE>"
 
 $pathOutput = & $adb shell "pm path com.naturalmotion.customstreetracer2"
@@ -185,7 +289,7 @@ $libPath = $apkPath.Replace("/base.apk", "/lib/arm64/libil2cpp.so")
 
 --- STEP 10: REINSTALL MAGISK ---
 & $adb install -r "C:\\Path\\To\\Magisk.apk"
-& $adb shell "su -c id" # Tap "Grant" again when the popup appears.
+& $adb shell "su -c id" 
 
 --- STEP 11: REINSTALL GAME APK & OBB ---
 & $adb install -r "C:\\Path\\To\\com.naturalmotion.customstreetracer2.apk"
@@ -209,7 +313,7 @@ Write-Host "New Game UID: $uid"
 & $adb shell "su -c 'ls -l $obbDest'"
 
 --- STEP 13: MOD FILES ---
-1. Upload the pulled nsb_live, scb_live, and libil2cpp_original.so into the web tool.
+1. Upload the pulled nsb_live, scb_live, and libil2cpp_original.so into this web tool.
 2. Download the modded nsb_modded, scb_modded, and libil2cpp_patched.so.
 
 --- STEP 14: PUSH PATCHED .SO ---
@@ -223,7 +327,6 @@ $libPath = $apkPath.Replace("/base.apk", "/lib/arm64/libil2cpp.so")
 & $adb shell "su -c 'sync'"
 & $adb shell "su -c 'rm /sdcard/libil2cpp.so'"
 
-# CRITICAL: Fix permissions so the game doesn't infinite load
 & $adb shell "su -c 'chmod 755 $libPath'"
 & $adb shell "su -c 'restorecon -v $libPath'"
 
@@ -232,7 +335,6 @@ $pkg = "/data/media/0/Android/data/com.naturalmotion.customstreetracer2/files"
 & $adb push "C:\\Path\\To\\Downloads\\nsb_modded" /sdcard/nsb_new
 & $adb push "C:\\Path\\To\\Downloads\\scb_modded" /sdcard/scb_new
 
-# Auto-detect the active ID folder
 $idLine = & $adb shell "su -c 'ls $pkg/pp/'" | Where-Object { $_ -match '^\\d{11}$' }
 $id = $idLine.Trim()
 
@@ -245,16 +347,11 @@ $id = $idLine.Trim()
 
 & $adb shell "su -c 'chown -R \${uid}:\${uid} $pkg/pp'"
 & $adb shell "su -c 'chmod -R 777 $pkg/pp'"
-
-# CRITICAL: Fix SELinux context so the game can read the injected files
 & $adb shell "su -c 'restorecon -RF $pkg/pp'"
 
 --- STEP 16: LAUNCH & CHOOSE LOCAL ---
-# Grant All Files Access
 & $adb shell "pm grant com.naturalmotion.customstreetracer2 android.permission.READ_EXTERNAL_STORAGE"
 & $adb shell "appops set com.naturalmotion.customstreetracer2 MANAGE_EXTERNAL_STORAGE allow"
-
-# Launch
 & $adb shell "monkey -p com.naturalmotion.customstreetracer2 -c android.intent.category.LAUNCHER 1"
 
 1. Launch CSR2.
@@ -276,7 +373,7 @@ $id = $idLine.Trim()
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-fg font-display uppercase tracking-wide">CSR2 Mod Generator</h1>
-          <p className="text-sm text-muted mt-1">Generates modded NSB, SCB, and patched libil2cpp.so.</p>
+          <p className="text-sm text-muted mt-1">Generates modded NSB, SCB, and patched libil2cpp.so entirely in your browser.</p>
         </div>
       </div>
 
@@ -295,205 +392,10 @@ $id = $idLine.Trim()
               <button onClick={downloadInstructions} className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded text-sm transition">
                 [Download] instructions.txt
               </button>
-              <button onClick={downloadPythonScript} className="bg-primary hover:bg-primary/80 text-primary-fg font-bold py-2 px-4 rounded text-sm transition">
-                [Download] Standalone Modder (.py)
-              </button>
             </div>
-
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 1: Download Required Files</h4>
-                <ul className="list-disc ml-5 text-sm space-y-1 text-fg">
-                  <li>CSR 2 APK + OBB: <a href="https://apkpure.com/csr-2-realistic-drag-racing/com.naturalmotion.customstreetracer2/download" target="_blank" rel="noopener noreferrer" className="text-primary underline">APKPure (Latest XAPK)</a></li>
-                  <li>Magisk.apk: <a href="https://github.com/topjohnwu/Magisk/releases" target="_blank" rel="noopener noreferrer" className="text-primary underline">GitHub Releases</a></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 2: Root the Emulator</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`$adb = "C:\\Program Files\\Google\\Play Games Developer Emulator\\current\\emulator\\adb.exe"
-& $adb install "C:\\Path\\To\\Magisk.apk"
-# Open Magisk app inside the emulator. Let it complete "Additional Setup" and reboot.`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 3: Grant ADB Root Access</h4>
-                <p className="text-sm text-muted mb-2">A popup will appear on the emulator screen. Tap "Grant". The output must say uid=0(root).</p>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb shell "su -c id"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 4: Install Game APK</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb install -r "C:\\Path\\To\\com.naturalmotion.customstreetracer2.apk"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 5: Push OBB Files</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`$obbDest = "/data/media/0/Android/obb/com.naturalmotion.customstreetracer2"
-& $adb shell "su -c 'mkdir -p $obbDest'"
-& $adb shell "su -c 'mkdir -p /sdcard/temp_obb'"
-& $adb push "C:\\Path\\To\\main.6805204.com.naturalmotion.customstreetracer2.obb" /sdcard/temp_obb/main.6805204.com.naturalmotion.customstreetracer2.obb
-& $adb push "C:\\Path\\To\\patch.6805204.com.naturalmotion.customstreetracer2.obb" /sdcard/temp_obb/patch.6805204.com.naturalmotion.customstreetracer2.obb
-& $adb shell "su -c 'mv /sdcard/temp_obb/*.obb $obbDest/'"
-& $adb shell "su -c 'rm -rf /sdcard/temp_obb'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 6: Verify OBB Files & Get UID</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb shell "su -c 'ls -l $obbDest'"
-$uidLine = & $adb shell "pm list packages -U com.naturalmotion.customstreetracer2"
-$uid = ($uidLine -split 'uid:')[1].Trim()
-Write-Host "Your Game UID is: $uid"
-& $adb shell "su -c 'chown -R \${uid}:\${uid} $obbDest'"
-& $adb shell "su -c 'chmod -R 777 $obbDest'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 7: Launch & Complete Tutorial (CRITICAL)</h4>
-                <p className="text-sm text-muted mb-2">You MUST complete the tutorial on this first boot. Do not inject any files yet. If you skip the tutorial, the game's state machine will soft-lock or strip the cars later. Play until you reach the fully interactive garage, then force close the game.</p>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb shell "am force-stop com.naturalmotion.customstreetracer2"
-$pkg = "/data/media/0/Android/data/com.naturalmotion.customstreetracer2/files"
-& $adb shell "su -c 'ls $pkg/pp/'" # Note the 11-digit folder name (your ID)
-$id = "<YOUR_ID_FROM_ABOVE>"
-$pathOutput = & $adb shell "pm path com.naturalmotion.customstreetracer2"
-$apkPath = ($pathOutput -split "package:")[1].Trim() -replace "\`r", "" -replace "\`n", ""
-$libPath = $apkPath.Replace("/base.apk", "/lib/arm64/libil2cpp.so")
-& $adb shell "su -c 'cp $pkg/pp/$id/nsb /sdcard/nsb'"
-& $adb shell "su -c 'cp $pkg/pp/$id/scb /sdcard/scb'"
-& $adb shell "su -c 'cp $libPath /sdcard/libil2cpp.so'"
-& $adb pull /sdcard/nsb "C:\\Path\\To\\Downloads\\nsb_live"
-& $adb pull /sdcard/scb "C:\\Path\\To\\Downloads\\scb_live"
-& $adb pull /sdcard/libil2cpp.so "C:\\Path\\To\\Downloads\\libil2cpp_original.so"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 8: Verify Pulled Files</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb shell "su -c 'ls -l /sdcard/nsb /sdcard/scb /sdcard/libil2cpp.so'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 9: Scratch Scratch Reset</h4>
-                <p className="text-sm text-muted mb-2">You must remove the account to force a fresh device state. Use the EXACT SAME Google Play account you just used.</p>
-                <ul className="list-disc ml-5 text-sm space-y-1 text-fg">
-                  <li>Open Emulator Settings.</li>
-                  <li>Go to Accounts.</li>
-                  <li>Click your Google email.</li>
-                  <li>Click "Remove account" (This signs you out immediately).</li>
-                  <li>Sign back into the emulator with your Google account.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 10: Reinstall Magisk</h4>
-                <p className="text-sm text-muted mb-2">A popup will appear on the emulator screen. Tap "Grant".</p>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb install -r "C:\\Path\\To\\Magisk.apk"
-& $adb shell "su -c id"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 11: Reinstall Game APK & OBB</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`& $adb install -r "C:\\Path\\To\\com.naturalmotion.customstreetracer2.apk"
-$obbDest = "/data/media/0/Android/obb/com.naturalmotion.customstreetracer2"
-& $adb shell "su -c 'mkdir -p $obbDest'"
-& $adb shell "su -c 'mkdir -p /sdcard/temp_obb'"
-& $adb push "C:\\Path\\To\\main.6805204.com.naturalmotion.customstreetracer2.obb" /sdcard/temp_obb/main.6805204.com.naturalmotion.customstreetracer2.obb
-& $adb push "C:\\Path\\To\\patch.6805204.com.naturalmotion.customstreetracer2.obb" /sdcard/temp_obb/patch.6805204.com.naturalmotion.customstreetracer2.obb
-& $adb shell "su -c 'mv /sdcard/temp_obb/*.obb $obbDest/'"
-& $adb shell "su -c 'rm -rf /sdcard/temp_obb'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 12: Verify OBB Files & Update UID</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`$uidLine = & $adb shell "pm list packages -U com.naturalmotion.customstreetracer2"
-$uid = ($uidLine -split 'uid:')[1].Trim()
-Write-Host "New Game UID: $uid"
-& $adb shell "su -c 'chown -R \${uid}:\${uid} $obbDest'"
-& $adb shell "su -c 'chmod -R 777 $obbDest'"
-& $adb shell "su -c 'ls -l $obbDest'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 13: Mod Files</h4>
-                <p className="text-sm text-muted mb-2">Upload the pulled nsb_live, scb_live, and libil2cpp_original.so into the web tool. Download the modded nsb_modded, scb_modded, and libil2cpp_patched.so.</p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 14: Push Patched .SO</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`$pathOutput = & $adb shell "pm path com.naturalmotion.customstreetracer2"
-$apkPath = ($pathOutput -split "package:")[1].Trim() -replace "\`r", "" -replace "\`n", ""
-$libPath = $apkPath.Replace("/base.apk", "/lib/arm64/libil2cpp.so")
-
-& $adb push "C:\\Path\\To\\Downloads\\libil2cpp_patched.so" /sdcard/libil2cpp.so
-& $adb shell "su -c 'mount -o rw,remount /data'"
-& $adb shell "su -c 'cat /sdcard/libil2cpp.so > $libPath'"
-& $adb shell "su -c 'sync'"
-& $adb shell "su -c 'rm /sdcard/libil2cpp.so'"
-
-# CRITICAL: Fix permissions so the game doesn't infinite load
-& $adb shell "su -c 'chmod 755 $libPath'"
-& $adb shell "su -c 'restorecon -v $libPath'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 15: Maverick Injection (DO NOT LAUNCH)</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`$pkg = "/data/media/0/Android/data/com.naturalmotion.customstreetracer2/files"
-& $adb push "C:\\Path\\To\\Downloads\\nsb_modded" /sdcard/nsb_new
-& $adb push "C:\\Path\\To\\Downloads\\scb_modded" /sdcard/scb_new
-
-# Auto-detect the active ID folder
-$idLine = & $adb shell "su -c 'ls $pkg/pp/'" | Where-Object { $_ -match '^\\d{11}$' }
-$id = $idLine.Trim()
-
-& $adb shell "su -c 'mkdir -p $pkg/pp/$id'"
-& $adb shell "su -c 'mkdir -p $pkg/pp/temp'"
-& $adb shell "su -c 'cp /sdcard/nsb_new $pkg/pp/$id/nsb'"
-& $adb shell "su -c 'cp /sdcard/scb_new $pkg/pp/$id/scb'"
-& $adb shell "su -c 'cp /sdcard/nsb_new $pkg/pp/temp/nsb'"
-& $adb shell "su -c 'cp /sdcard/scb_new $pkg/pp/temp/scb'"
-
-& $adb shell "su -c 'chown -R \${uid}:\${uid} $pkg/pp'"
-& $adb shell "su -c 'chmod -R 777 $pkg/pp'"
-
-# CRITICAL: Fix SELinux context so the game can read the injected files
-& $adb shell "su -c 'restorecon -RF $pkg/pp'"`}
-                </pre>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-primary mb-2">Step 16: Launch & Choose Local</h4>
-                <pre className="bg-[#0a0b08] p-3 rounded text-xs overflow-x-auto text-[#a39e8c] border border-border">
-{`# Grant All Files Access
-& $adb shell "pm grant com.naturalmotion.customstreetracer2 android.permission.READ_EXTERNAL_STORAGE"
-& $adb shell "appops set com.naturalmotion.customstreetracer2 MANAGE_EXTERNAL_STORAGE allow"
-
-# Launch
-& $adb shell "monkey -p com.naturalmotion.customstreetracer2 -c android.intent.category.LAUNCHER 1"`}
-                </pre>
-              </div>
-            </div>
+            
+            {/* Visual UI steps from your original file */}
+            <p className="text-sm text-muted">Click [Download] above to get the exact 16-step guide with all commands.</p>
           </div>
         )}
       </section>
@@ -530,7 +432,10 @@ $id = $idLine.Trim()
           <label className="text-sm font-medium text-fg">Unlock All Cars (Safe)</label>
         </div>
         <div className="flex items-center gap-2">
-          <input type="checkbox" checked={addMoney} onChange={(e) => setAddMoney(e.target.checked)} className="w-4 h-4 accent-primary" />
+          <input type="checkbox" checked={addMoney} onChange={(e) => setAddMoney(e.target.checked)} className="w-4 h-4 accent-primary" />      setStatus("Unpacking & Modding NSB...");
+      const nsbBuffer = await nsbFile.arrayBuffer();
+      const { jsonText: nsbJsonStr, version: nsbVer, trailing: nsbTrail } = unpackNsb(nsbBuffer);
+      const nsb = JSON.parse(nsbJsonStr);
           <label className="text-sm font-medium text-fg">Inject Custom Resources (Cash, Gold, 10k Keys/Parts, etc.)</label>
         </div>
         <div className="flex items-center gap-2">
