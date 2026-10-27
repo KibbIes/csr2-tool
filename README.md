@@ -1,73 +1,82 @@
-﻿# CSR2 Local Environment & Save State Utility
+$readme = @"
+# CSR2 Mod Generator 🏎️
 
-A local web-based utility for managing save states, asset databases, and binary configurations for the Google Play Games Developer Emulator (GPGDE).
+A browser-based tool to generate modded save files (`nsb` / `scb`) and a patched `libil2cpp.so` for **CSR2 (Custom Street Racer 2)**. 
 
-This repository provides a React frontend and a Python backend to process local files. 
+This tool runs entirely client-side. Your save files are parsed, modified, and repacked in your browser—no data is uploaded to a server.
 
-## Prerequisites
-Before setting up the tool, ensure you have the following installed on your PC:
-- [Node.js](https://nodejs.org/) (LTS version recommended)
-- [Python 3.9+](https://www.python.org/downloads/)
-- Git
+## ✨ Features
+* **Emulator vs. Phone Target:** Automatically adjusts the JSON generation (specifically the `cgpi` garage mapping) and the `.so` patch offsets depending on whether you are modding a PC emulator or a real rooted Android device.
+* **Dynamic Signature Scanning:** No more hardcoded memory offsets. The tool scans your specific `libil2cpp.so` and dynamically patches `SyncProfile()` and `ShowForceProfileSyncPopup()` to completely bypass the cloud sync overwrite. Works on any CSR2 version.
+* **Merge Mode:** Injects all 1,278 cars into your existing garage while preserving your level, progress, and current cars.
+* **Replace Mode:** Wipes the garage and generates a fresh, fully-modded tutorial-complete save.
+* **Resource Injection:** Maxes out Cash, Gold, Keys, and Fusion Parts.
+* **Built-in Tutorial:** Generates downloadable step-by-step ADB/PowerShell guides directly inside the app.
 
 ---
 
-## Part 1: Repository Setup
+## 🚀 Installation & Setup
+
+### Prerequisites
+You need [Node.js](https://nodejs.org/) installed (v18 or higher recommended). You will also need a package manager like `npm`, `pnpm`, or `yarn`.
+
+### Local Development
 
 1. **Clone the repository:**
-   Open your terminal (PowerShell or Command Prompt) and run:
-   `git clone https://github.com/KibbIes/csr2-tool.git`
-   `cd csr2-tool`
+   ``git clone https://github.com/YOUR_USERNAME/CSR2-Mod-Generator.git``
+   ``cd CSR2-Mod-Generator``
 
-2. **Ensure required files are present:**
-   The backend requires a `all_cars.txt` file to generate the asset ledger. Ensure this file is located in the `backend/` folder. 
+2. **Install dependencies:**
+   ``npm install``
+   *(or pnpm install / yarn install)*
 
----
+3. **Start the development server:**
+   ``npm run dev``
 
-## Part 2: Running the Python Backend
+4. **Open the app:**
+   Navigate to ``http://localhost:3000`` (or the port specified in your terminal) in your browser.
 
-The backend handles the file unpacking, database injection, and binary patching. It runs locally on port `8000`.
-
-1. Open a new terminal and navigate to the backend folder:
-   `cd backend`
-
-2. (Optional but recommended) Create a virtual environment:
-   `python -m venv venv`
-   `.\venv\Scripts\activate`
-
-3. The backend uses only standard Python libraries (`http.server`, `gzip`, `hashlib`, `hmac`, `json`). There are no external `pip` packages required.
-
-4. Start the backend server:
-   `python backend.py`
-
-   You should see: `Starting server on port 8000...`
-   Keep this terminal window open and running.
+### Building for Production
+To create a production-ready build:
+``npm run build``
 
 ---
 
-## Part 3: Running the React Frontend
+## 📖 How to Use
 
-The frontend provides the web interface, file uploads, and the built-in 16-step guide.
-
-1. Open a **new** terminal window and navigate to the root folder (`csr2-tool`).
-
-2. Install the Node dependencies (only required the first time):
-   `npm install`
-
-3. Start the Vite development server:
-   `npm run dev`
-
-4. Open your web browser and navigate to the local address provided in the terminal (usually `http://localhost:5173`).
+1. **Select Target Device:** Choose **Emulator** or **Phone** at the top of the interface.
+2. **Pull your files:** Use ADB to pull ``nsb``, ``scb``, and ``libil2cpp.so`` from your rooted device or emulator. *(Detailed instructions are provided inside the app).*
+3. **Upload to the tool:** Drop the files into the web interface.
+4. **Enter Player ID:** Use the 11-digit folder name from your save path.
+5. **Generate:** Download the modded files and the patched ``.so``.
+6. **Push to device:** Follow the exact ADB commands generated in the app's 8-step tutorial.
 
 ---
 
-## Usage
+## 📦 Releases
 
-Once both the backend and frontend are running:
-1. Use the web interface to upload your original baseline files (`nsb`, `scb`, and `libil2cpp.so`).
-2. Input your Player ID.
-3. Click **Generate Files** to download the processed files.
-4. Click the **View Full 16-Step Installation Tutorial** button inside the web tool for the exact ADB commands required to deploy the files to your emulator.
+Please check the [Releases](../../releases) page for the latest stable builds. 
 
-## Disclaimer
-This tool is provided for educational and local environment management purposes only. It is not affiliated with, endorsed by, or associated with Zynga or NaturalMotion. Use at your own risk.
+* **Latest Release:** ``v1.1.0`` (Dynamic `.so` patching & Phone support)
+* If you are hosting this locally or via Vercel/Netlify, you do not need to download the releases—just use the source code.
+
+---
+
+## 🛠️ Tech Stack
+* **React** / **TypeScript** / **Tailwind CSS**
+* **Pako** (GZIP compression/decompression)
+* **Web Crypto API** (HMAC-SHA1 signature generation)
+
+---
+
+## ⚠️ Disclaimer
+This tool is for educational purposes only. Modifying game files can result in a ban. Use at your own risk. The developers are not responsible for any account bans or device issues. Always backup your original ``nsb``, ``scb``, and ``libil2cpp.so`` files before modifying them.
+"@
+
+# Overwrite README.md
+$readme | Out-File -FilePath "README.md" -Encoding utf8
+
+# Stage, Commit, and Push
+git add .
+git commit -m "feat: implement dynamic .so signature scanning and Emulator/Phone toggle support"
+git push
