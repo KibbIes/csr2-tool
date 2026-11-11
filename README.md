@@ -22,7 +22,7 @@ Replace Mode: Wipes the garage and generates a fresh, fully-modded tutorial-comp
 
 Resource Injection: Maxes out Cash, Gold, Keys, and Fusion Parts.
 
-Built-in Tutorial: Generates downloadable step-by-step ADB / PowerShell / Termux guides directly inside the app.
+Built-in Tutorial: Tells you how to use it!
 
 🚀 Installation & Setup
 Prerequisites
