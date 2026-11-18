@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import * as pako from "pako";
+import { buildCarFromCatalog } from '@/lib/carCatalog'
 
 // ==========================================
 // BACKEND
@@ -298,7 +299,7 @@ function unpackNsb(arrayBuffer: ArrayBuffer) {
   if (inflator.err) throw new Error("GZIP Error: " + inflator.msg);
 
   const text = new TextDecoder().decode(inflator.result as Uint8Array);
-  const trailingStart = bytes.length - inflator.strm.avail_in;
+  const trailingStart = bytes.length - (inflator as any).strm.avail_in;
   const trailing = bytes.slice(trailingStart);
 
   let version = 1;
@@ -344,51 +345,6 @@ async function packNsb(jsonText: string, playerId: string, version: number, trai
   result.set(trailing, gzipped.length);
   return result;
 }
-
-// ==========================================
-// CAR TEMPLATE GENERATOR
-// ==========================================
-function generateCarTemplate(crdb: string, maxed: boolean, unid: number) {
-  const upgradeLevel = maxed ? 7 : 0;
-  const fusionLevel = maxed ? 7 : 0;
-  const fusionSlots = maxed ? [7, 7, 7, 7, 7] : [0, 0, 0, 0, 0];
-  
-  const generateUpgradeState = () => {
-    const lvls = [];
-    for (let i = 0; i < 7; i++) {
-      lvls.push({
-        ulpf: maxed ? true : (i === 0),
-        fsg: fusionSlots
-      });
-    }
-    return { lvlo: upgradeLevel, lvlf: fusionLevel, lvls };
-  };
-
-  return {
-    "unid": unid,
-    "crdb": crdb,
-    "awar": false,
-    "grsp": [0, 0, 0, 0, 0],
-    "fidr": 0, "nlpr": 0, "tafr": 0, "titp": 0, "trld": 0.0, "tssp": 0, "tssr": 0, "ttup": 0, "ttpp": 0,
-    "appi": 0, "orpi": 0, "apiid": 0, "oriid": 0, "apcid": 0, "orcid": 0,
-    "apnid": -2147483648, "apnzid": -2147483648, "apncf": -2147483648, "apncb": -2147483648, "apfid": -2147483648,
-    "apcns": 0, "appns": 0, "apnpid": -2147483648, "opnid": -2147483648, "opnzid": -2147483648, "opncf": -2147483648,
-    "opncb": -2147483648, "opfid": -2147483648, "opcns": 0, "oppns": 0, "opnpid": -2147483648, "aplid": -2147483648,
-    "orlid": -2147483648, "aplzsid": -2147483648, "orlzsid": -2147483648, "apln": "",
-    "apcn": [`${crdb}_Wheel1A_3D`], "opcn": `${crdb}_Wheel1A_3D`,
-    "bqmt": 0.0, "bhmt": 0.0, "ditr": 0.0, "rcat": 0, "rwon": 0, "msou": 0, "nuub": 0, "ccna": 0,
-    "upst": Array(7).fill(null).map(() => generateUpgradeState()),
-    "fpin": 1,
-    "rpst": [{"rvlo": 0, "rvlf": 0}, {"rvlo": 0, "rvlf": 0}, {"rvlo": 0, "rvlf": 0}, {"rvlo": 0, "rvlf": 0}],
-    "tscs": {"BODYKIT": 0, "WHEELS": 0, "WING": 0, "BOOST_COLOR": 0, "HOOD": 0, "RIMS": 0, "TIRE": 0},
-    "fpul": 0, "rsup": 0, "rpbb": 0, "rncu": false, "fcu": false, "pncu": false, "cncu": false,
-    "cppi": 0, "cepi": 0, "tdut": 0, "tdtt": 0, "ttqm": 0, "tthm": 0, "tt60": 0, "tt1h": 0, "spqm": 0, "sphm": 0,
-    "ctie": "TIER_1", "csrc": "Gacha", "nupl": {"txt": "", "cpf": false}, "esup": false, "elcl": 0, "gacp": false,
-    "paid": 0, "wpid": 2147483647, "inid": 0, "caid": 0, "lzsid": -2147483648, "livid": -2147483648,
-    "whbn": "Wheel1A_3D", "tlad": 0.0, "need": false, "cmlv": 0, "isra": false
-  };
-}
-
 // ==========================================
 // COMPONENT
 // ==========================================
@@ -500,7 +456,8 @@ export function NsbBench() {
           if (saveMode === 'merge' && exists) return;
 
           maxUnid++;
-          const newCar = generateCarTemplate(crdb, directCarDeliveryType === 'maxed', maxUnid);
+          const newCar = buildCarFromCatalog(crdb, maxUnid);
+          if (!newCar) return;
           nsb.garage.push(newCar);
         });
       }
@@ -869,7 +826,7 @@ su -c "monkey -p $pkg -c android.intent.category.LAUNCHER 1"`;
       </div>
 
       <div className="border-2 border-red-500/50 bg-red-500/10 p-4 rounded-lg flex gap-3 items-start">
-        <span className="text-red-500 text-2xl font-bold mt-[-2px]">⚠️</span>
+        <span className="text-red-500 text-2xl font-bold mt-[-2px]">âš ï¸</span>
         <div className="flex flex-col gap-1">
           <h2 className="text-red-500 font-bold uppercase tracking-wide text-sm">Highly Recommended: Read Before Proceeding</h2>
           <p className="text-sm text-fg/80 leading-relaxed">
@@ -1197,7 +1154,7 @@ su -c "monkey -p $pkg -c android.intent.category.LAUNCHER 1"`;
       <details className="border-t border-border pt-4 mt-4 group">
         <summary className="text-lg font-bold text-fg cursor-pointer flex items-center justify-between hover:text-primary transition-colors list-none [&::-webkit-details-marker]:hidden">
           <span>5. How to Push (The True Maverick Method)</span>
-          <span className="text-sm font-normal text-muted group-open:rotate-180 transition-transform">▼</span>
+          <span className="text-sm font-normal text-muted group-open:rotate-180 transition-transform">â–¼</span>
         </summary>
         <div className="flex flex-col gap-4 mt-4">
           <div className="flex flex-col gap-6 bg-surface-2 p-4 rounded-lg border border-border text-sm text-fg">

@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { NsbBench } from "@/components/nsb-bench";
 import React, { useState } from "react";
 
 export const Route = createFileRoute("/")({ component: () => {
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<string | null>(null);
 
   const handleBuildNSB = async () => {
     try {

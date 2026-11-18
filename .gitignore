@@ -24,3 +24,5 @@ Thumbs.db
 # Large binary game files
 *.so
 _LOCAL_ARCHIVE/
+
+*.bak
