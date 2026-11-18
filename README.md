@@ -1,20 +1,7 @@
 ﻿CSR2 Save Editor 🏎️
 ⚠️ DISCLAIMER
- *EDIT*
-## Troubleshooting
 
-### Cars don't appear after Save Editor injection
-If the God Inbox works but cars injected via the Save Editor don't show up in-game,
-the game build may read the legacy `caow` field instead of `garage`.
-
-Fix: in `src/components/nsb-bench.tsx`, in the direct-injection block, change:
-
-```ts
-nsb.garage.push(newCar);
-to:
-
-ts
-(nsb.caow ??= []).push(newCar);
+Fixed the save Editor functionality. It SHOULD now spawn in cars properly. If you run into any errors, the discord is where I am reachable.
  
 Not all emulators are tested. Not all phone types are tested.
 
